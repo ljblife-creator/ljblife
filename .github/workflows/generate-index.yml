@@ -1,0 +1,81 @@
+name: Auto Generate Index
+run-name: 自动生成导航首页
+on:
+  push:
+    branches: [ main ] # 你的主分支是main，不用改
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取仓库代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 安装Node环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 自动扫描HTML并生成index.html
+        run: |
+          node -e "
+            const fs = require('fs');
+            const allFiles = fs.readdirSync('./');
+            // 筛选所有html，排除index自身
+            const htmlList = allFiles.filter(f => f.endsWith('.html') && f !== 'index.html');
+            // 拼接文件数组字符串
+            const fileStr = htmlList.map(name => `\"${name}\"`).join(',\n            ');
+            // 完整导航页面代码
+            const pageHtml = \`<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目自动导航</title>
+    <style>
+        * {margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body {padding:40px 20px;max-width:900px;margin:0 auto;background:#f7f9fc}
+        h1 {text-align:center;color:#222;margin-bottom:12px}
+        .tip {text-align:center;color:#666;margin-bottom:40px}
+        .page-list {display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+        .page-btn {display:block;padding:24px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:10px;text-align:center;font-size:16px;transition:0.2s}
+        .page-btn:hover {background:#1d4ed8;transform:translateY(-3px)}
+    </style>
+</head>
+<body>
+    <h1>我的项目页面导航</h1>
+    <p class="tip">共 <span id="count">0</span> 个网页</p>
+    <div class="page-list" id="listBox"></div>
+    <script>
+        const htmlFiles = [
+            \${fileStr}
+        ];
+        const listBox = document.getElementById(\\"listBox\\");
+        const countDom = document.getElementById(\\"count\\");
+        countDom.innerText = htmlFiles.length;
+        htmlFiles.forEach(fileName => {
+            const a = document.createElement(\\"a\\");
+            a.className = \\"page-btn\\";
+            a.href = fileName;
+            a.innerText = fileName.replace(\\".html\\", \\"\\");
+            listBox.appendChild(a);
+        });
+    </script>
+</body>
+</html>\`;
+            fs.writeFileSync('index.html', pageHtml, 'utf8');
+            console.log(\`已生成index.html，共\${htmlList.length}个页面\`);
+          "
+
+      - name: 配置Git提交身份
+        run: |
+          git config --global user.name "Auto Index Bot"
+          git config --global user.email "bot@github.com"
+
+      - name: 自动提交更新后的index.html
+        run: |
+          git add index.html
+          git diff --quiet && git diff --staged --quiet || git commit -m "🤖 自动更新导航列表"
+          git push
