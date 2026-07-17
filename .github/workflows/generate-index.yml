@@ -1,84 +1,94 @@
 name: Auto Generate Index
 run-name: 自动生成导航首页
+# 并发控制：同一分支只保留最新任务
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+# 仅主分支推送时触发
 on:
   push:
     branches: [ main ]
 jobs:
   build:
     runs-on: ubuntu-latest
+    # 机器人自己提交的代码不执行流水线，防止死循环
     if: github.actor != 'Auto Index Bot'
     steps:
-      - name: 拉取仓库代码
+      - name: 拉取完整仓库代码
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: 安装Node.js 20
+      - name: 安装 Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: 扫描HTML并生成index.html
+      - name: 扫描根目录HTML并生成index.html
         run: |
           node <<'EOF'
           const fs = require('fs');
+          // 读取仓库根目录所有文件
           const allFiles = fs.readdirSync('./');
+          // 过滤html，排除自身index.html
           const htmlList = allFiles.filter(f => f.endsWith('.html') && f !== 'index.html');
+          // 拼接JS数组字符串
           const fileStr = htmlList.map(name => `"${name}"`).join(',\n            ');
+          // 完整导航页面模板，统一缩进
           const pageHtml = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>项目自动导航</title>
-<style>
-* {margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-body {padding:40px 20px;max-width:900px;margin:0 auto;background:#f7f9fc}
-h1 {text-align:center;color:#222;margin-bottom:12px}
-.tip {text-align:center;color:#666;margin-bottom:40px}
-.page-list {display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-.page-btn {display:block;padding:24px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:10px;text-align:center;font-size:16px;transition:0.2s}
-.page-btn:hover {background:#1d4ed8;transform:translateY(-3px)}
-</style>
-</head>
-<body>
-<h1>我的项目页面导航</h1>
-<p class="tip">共 <span id="count">0</span> 个网页</p>
-<div class="page-list" id="listBox"></div>
-<script>
-const htmlFiles = [
-${fileStr}
-];
-const listBox = document.getElementById("listBox");
-const countDom = document.getElementById("count");
-countDom.innerText = htmlFiles.length;
-htmlFiles.forEach(fileName => {
-  const a = document.createElement("a");
-  a.className = "page-btn";
-  a.href = fileName;
-  a.innerText = fileName.replace(".html", "");
-});
-</script>
-</body>
-</html>`;
+            <html lang="zh-CN">
+              <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>项目自动导航</title>
+                <style>
+                  * {margin:0;padding:0;box-sizing:border-box;font-family:system-ui, sans-serif}
+                  body {padding:40px 20px;max-width:900px;margin:0 auto;background:#f7f9fc}
+                  h1 {text-align:center;color:#222;margin-bottom:12px}
+                  .tip {text-align:center;color:#666;margin-bottom:40px;color:#666}
+                  .page-list {display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:16px}
+                  .page-btn {display:block;padding:24px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:10px;text-align:center;font-size:16px;transition:0.2s ease}
+                  .page-btn:hover {background:#1d4ed8;transform:translateY(-3px)}
+                </style>
+              </head>
+              <body>
+                <h1>我的项目页面导航</h1>
+                <p class="tip">共 <span id="count">0</span> 个网页</p>
+                <div class="page-list" id="listBox"></div>
+                <script>
+                  const htmlFiles = [
+                    ${fileStr}
+                  ];
+                  const listBox = document.getElementById("listBox");
+                  const countDom = document.getElementById("count");
+                  countDom.innerText = htmlFiles.length;
+                  htmlFiles.forEach(fileName => {
+                    const a = document.createElement("a");
+                    a.className = "page-btn";
+                    a.href = fileName;
+                    a.innerText = fileName.replace(".html", "");
+                    listBox.appendChild(a);
+                  });
+                </script>
+              </body>
+            </html>`;
+          // 写入index.html
           fs.writeFileSync('index.html', pageHtml, 'utf8');
-          console.log(`已生成index.html，共${htmlList.length}个页面`);
+          console.log(`生成完成，检测到 ${htmlList.length} 个网页`);
           EOF
 
-      - name: 配置Git提交用户
+      - name: 配置Git提交身份
         run: |
           git config --global user.name "Auto Index Bot"
           git config --global user.email "bot@github.com"
 
-      - name: 提交并推送更新
+      - name: 提交并推送更新后的index
         run: |
           git add index.html
+          # 判断文件是否有改动，无改动直接退出
           if git diff --quiet --cached; then
-            echo "index无变化，无需提交"
+            echo "index.html无变更，跳过提交"
           else
-            git commit -m "🤖 自动更新导航列表"
+            git commit -m "🤖 自动更新页面导航列表"
             git push
           fi
