@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小勇士闯关大冒险</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    font-family: "PingFang SC","Microsoft YaHei",sans-serif;
+    background: linear-gradient(180deg,#aee7ff 0%,#e8f9ff 40%,#fff7e0 100%);
+    min-height:100vh; display:flex; justify-content:center; padding:12px;
+  }
+  .app { width:100%; max-width:560px; }
+  /* 顶部星星栏 */
+  .topbar {
+    background:#fff; border-radius:20px; padding:10px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+    box-shadow:0 4px 12px rgba(0,0,0,.08); margin-bottom:14px;
+  }
+  .topbar .title { font-weight:800; color:#ff7043; font-size:17px; }
+  .stars { font-size:22px; letter-spacing:2px; }
+  .star-dim { filter:grayscale(1); opacity:.35; }
+  /* 卡片 */
+  .card {
+    background:#fff; border-radius:24px; padding:22px 20px;
+    box-shadow:0 6px 20px rgba(0,0,0,.1); animation:pop .35s ease;
+  }
+  @keyframes pop { from{transform:scale(.94);opacity:0} to{transform:scale(1);opacity:1} }
+  .kp-badge {
+    display:inline-block; background:#ffe0ec; color:#d81b60;
+    border-radius:99px; padding:4px 14px; font-size:13px; font-weight:700; margin-bottom:10px;
+  }
+  h1 { font-size:26px; color:#5d4037; text-align:center; line-height:1.4; }
+  h2 { font-size:21px; color:#4e342e; line-height:1.5; margin-bottom:6px; }
+  .visual {
+    font-size:34px; text-align:center; margin:16px 0; line-height:1.6;
+    word-break:break-all; user-select:none;
+  }
+  .visual.small { font-size:26px; }
+  /* 选项按钮 */
+  .opts { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
+  .opts.one-col { grid-template-columns:1fr; }
+  .opt {
+    background:#fff3e0; border:3px solid #ffcc80; border-radius:18px;
+    padding:16px 10px; font-size:22px; font-weight:800; color:#5d4037;
+    cursor:pointer; text-align:center; transition:transform .1s;
+  }
+  .opt:active { transform:scale(.95); }
+  .opt.correct { background:#c8f7c5; border-color:#4caf50; animation:bounce .5s; }
+  .opt.wrong { background:#ffcdd2; border-color:#e57373; animation:shake .4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+  @keyframes bounce { 0%{transform:scale(1)} 40%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  .feedback { text-align:center; font-size:19px; font-weight:800; min-height:30px; margin-top:14px; }
+  .feedback.ok { color:#2e7d32; } .feedback.no { color:#c62828; }
+  /* 主按钮 */
+  .btn {
+    display:block; width:100%; margin-top:16px; padding:16px;
+    background:linear-gradient(135deg,#ff9800,#ff5722); color:#fff;
+    border:none; border-radius:18px; font-size:20px; font-weight:800;
+    cursor:pointer; box-shadow:0 4px 0 #d84315;
+  }
+  .btn:active { transform:translateY(3px); box-shadow:0 1px 0 #d84315; }
+  .btn.green { background:linear-gradient(135deg,#66bb6a,#43a047); box-shadow:0 4px 0 #2e7d32; }
+  .btn.hidden { display:none; }
+  /* 家长提示 */
+  details {
+    margin-top:16px; background:#f3f7ff; border-radius:14px; padding:10px 14px;
+    border:2px dashed #90caf9;
+  }
+  summary { cursor:pointer; font-weight:700; color:#1565c0; font-size:15px; }
+  details p { margin-top:8px; color:#37474f; font-size:15px; line-height:1.7; }
+  /* 进度 */
+  .progress { text-align:center; color:#8d6e63; font-size:14px; margin-bottom:8px; font-weight:700; }
+  /* 迷宫 */
+  .maze { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; max-width:300px; margin:14px auto; }
+  .cell {
+    aspect-ratio:1; background:#e8f5e9; border-radius:12px;
+    display:flex; align-items:center; justify-content:center; font-size:30px;
+    border:2px solid #c8e6c9;
+  }
+  .cell.rock { background:#eceff1; }
+  .dpad { display:grid; grid-template-columns:repeat(3,64px); gap:8px; justify-content:center; margin-top:10px; }
+  .dbtn {
+    height:56px; border:none; border-radius:14px; background:#4fc3f7; color:#fff;
+    font-size:26px; cursor:pointer; box-shadow:0 3px 0 #0288d1; font-weight:800;
+  }
+  .dbtn:active { transform:translateY(2px); box-shadow:0 1px 0 #0288d1; }
+  .dbtn.blank { visibility:hidden; }
+  /* 数独 */
+  .sudoku { display:grid; grid-template-columns:repeat(2,84px); gap:8px; justify-content:center; margin:16px auto; }
+  .sq {
+    aspect-ratio:1; border-radius:14px; display:flex; align-items:center; justify-content:center;
+    font-size:38px; font-weight:800;
+  }
+  .sq.fixed { background:#ffe0b2; color:#5d4037; border:3px solid #ffb74d; }
+  .sq.free { background:#e1f5fe; color:#01579b; border:3px dashed #4fc3f7; cursor:pointer; }
+  .hint { text-align:center; color:#8d6e63; font-size:15px; margin-top:6px; }
+  /* SVG 选项 */
+  .svg-opt { padding:10px; }
+  .svg-opt svg { display:block; margin:0 auto; }
+  /* 结尾彩带 */
+  .confetti { font-size:40px; text-align:center; animation:float 1.6s ease infinite alternate; }
+  @keyframes float { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+  .level-intro { text-align:center; }
+  .level-intro .big { font-size:64px; margin:10px 0; }
+  /* 学本领讲解页 */
+  .kp-badge.learn { background:#e1f5fe; color:#0277bd; }
+  .lesson-visual {
+    font-size:40px; text-align:center; margin:14px 0; line-height:1.7;
+    background:#f1f8e9; border-radius:16px; padding:14px; user-select:none;
+  }
+  .lesson-text { font-size:17px; color:#4e342e; line-height:2; margin-top:10px; }
+  .lesson-text b { color:#e65100; }
+  .magic-word {
+    background:#fff3e0; border:2px dashed #ffb74d; border-radius:14px;
+    padding:10px 14px; margin-top:12px; font-size:17px; font-weight:800;
+    color:#e65100; text-align:center; line-height:1.8;
+  }
+  .story { font-size:17px; color:#5d4037; line-height:1.9; margin:12px 0; text-align:left;
+    background:#fff8e1; border-radius:14px; padding:14px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="title">🏰 小勇士闯关大冒险</div>
+    <div class="stars" id="starbar"></div>
+  </div>
+  <div id="stage"></div>
+</div>
+
+<script>
+/* ================= 数据 ================= */
+const levels = [
+{
+  name:"数字森林", icon:"🌲",
+  story:"森林里的小松鼠要过冬啦！它捡了好多松果，可是不会数，也不会算。小勇士，快帮帮它！",
+  lessons:[
+  {
+    kp:"数的认识",
+    title:"数数的小秘密 🔢",
+    visual:"🌰🌰🌰🌰🌰<br>1️⃣2️⃣3️⃣4️⃣5️⃣",
+    text:"数东西的时候，用手指<b>点一个，数一个</b>，最后数到几，就是一共有几个！<br>数字们还是排好队的好朋友：5 的前面住着 <b>4</b>，后面住着 <b>6</b>。<br>所以『比 5 多 1』就是 6，『比 5 少 1』就是 4。",
+    magic:"🎵 点一个，数一个，<br>最后那个数，就是一共有几个！",
+    tip:"让孩子伸出手指跟着屏幕点数。然后玩快问快答：『比7多1是几？比10少1是几？』答对击掌。还可以让他试试两个两个地数：2、4、6、8、10。"
+  },
+  {
+    kp:"看图列算式",
+    title:"加号和减号是什么意思？➕➖",
+    visual:"🍎🍎 ➕ 🍎 = 🍎🍎🍎<br>🍬🍬🍬 ➖ 🍬 = 🍬🍬",
+    text:"<b>➕ 加号</b>就是『<b>合起来</b>』：2 个苹果和 1 个苹果合起来，2 + 1 = 3。<br><b>➖ 减号</b>就是『<b>拿走</b>』：3 颗糖吃掉 1 颗，3 − 1 = 2。<br>看到『又来了、一共』想加法；看到『吃掉、飞走、拿走』想减法！",
+    magic:"🎵 加号加号合起来，<br>减号减号拿拿走！",
+    tip:"拿几颗豆子现场演：先合并两堆让孩子说算式，再拿走几颗让他说算式。然后互换：你说算式『4−1』，让孩子用豆子演出来并编个小故事。"
+  },
+  {
+    kp:"巧算加减（凑十法）",
+    title:"最厉害的魔法：凑十法 ✨",
+    visual:"9 + 4<br>⬇️<br>9 + <b>1</b> + 3 = <b>10</b> + 3 = 13",
+    text:"数字 <b>10</b> 是数字王国里最好的朋友！<br>算 <b>9 + 4</b> 的时候：9 只差 <b>1</b> 个就到 10 啦，就从 4 里<b>借 1 个</b>给它。<br>9 变成 10，4 变成 3，答案就是 10 + 3 = <b>13</b>，一眼就看出来！",
+    magic:"🎵 看到 9，借 1 凑成 10；<br>看到 8，借 2 凑成 10！",
+    tip:"必须用实物摆一遍：9 颗豆子一堆、4 颗一堆，让孩子亲手把 1 颗移过去。移完问他：『现在是几和几？好算吗？』体感一次胜过讲十遍。"
+  }],
+  questions:[
+  {
+    type:"choice", kp:"数的认识",
+    title:"帮小松鼠数一数，一共有几颗松果？",
+    visual:"🌰🌰🌰🌰🌰<br>🌰🌰🌰",
+    options:["6","8","9","10"], answer:1,
+    tip:"让孩子用手指一颗一颗点着数，数完追问：『比8多1是几？比8少1是几？』还可以让他两个两个地数（2、4、6、8），渗透跳数。"
+  },
+  {
+    type:"choice", kp:"20以内计算",
+    title:"小松鼠上午捡了 8 颗松果，下午捡了 7 颗，一共捡了几颗？",
+    visual:"8 + 7 = ？",
+    options:["14","15","16","17"], answer:1,
+    tip:"如果孩子卡住，拿出真的豆子摆成8颗和7颗两堆，合起来数。不要直接报答案，问他：『你想怎么数？』"
+  },
+  {
+    type:"choice", kp:"看图列算式",
+    title:"树上有 3 只小鸟，又飞来 2 只。哪个算式说的是这幅图？",
+    visual:"🐦🐦🐦 ➕ 🐦🐦",
+    options:["3 + 2 = 5","3 − 2 = 1","2 + 2 = 4","5 + 2 = 7"], answer:0,
+    tip:"重点讲『+ 就是合起来，− 就是拿走』。答对后反着玩：你说算式 5−2，让孩子编一个小故事（飞走了2只…）。"
+  },
+  {
+    type:"choice", kp:"巧算加减（凑十法）",
+    title:"魔法时间！9 + 4 = ？<br><span style='font-size:15px;color:#8d6e63'>提示：9 只差 1 个就到 10 啦，从 4 里借 1 个给它！</span>",
+    visual:"9 + 4 → 10 + 3 = ？",
+    options:["12","13","14","11"], answer:1,
+    tip:"用豆子摆：9颗一堆、4颗一堆，真的把1颗移过去变成10和3。告诉孩子：『10是数字里最好的朋友，看到9就想借1个凑成10！』"
+  }]
+},
+{
+  name:"图形城堡", icon:"🏰",
+  story:"图形城堡是用各种各样的『积木』搭成的：长方体、正方体、圆柱、球……想进城堡，先要认识它们！",
+  lessons:[
+  {
+    kp:"立体图形综合",
+    title:"认识城堡的四种积木 🧱",
+    visual:"📦 长方体　🎲 正方体<br>🥫 圆柱　⚽ 球",
+    text:"<b>长方体</b>：像牙膏盒，长长方方的。<br><b>正方体</b>：像骰子，每个面都一样方方正正。<br><b>圆柱</b>：像罐头，躺下能滚，站着能稳稳放住。<br><b>球</b>：像皮球，圆溜溜，往哪儿放都会滚！",
+    magic:"🎵 方方正正是方体，<br>能滚能站是圆柱，<br>到处乱滚是小球！",
+    tip:"讲完立刻玩『家里寻宝』：让孩子 1 分钟内找一个圆柱（水杯）、一个长方体（书）、一个球。找回来后问：『为什么皮球不能像杯子一样站着不动？』"
+  },
+  {
+    kp:"图形分割 & 测量",
+    title:"图形会变身，手掌能量长 ✂️✋",
+    visual:"🟧 ✂️↘️ = 🔺🔺<br>✋✋✋✋✋ 🟥",
+    text:"正方形<b>斜着切一刀</b>，会变身成两个<b>三角形</b>！横着切、竖着切，变的是两个长方形。<br>想知道桌子有多长？可以用<b>手掌</b>一拃一拃地量：谁的拃数多，谁就更长！",
+    magic:"🎵 斜着切，变三角；<br>一拃一拃量一量，<br>数字大的就是长！",
+    tip:"拿一张正方形纸真的剪：先横切看结果，再拿新纸斜切对比。量桌子时提醒手掌要一个挨一个，不能留空隙——这是测量最重要的规则。"
+  }],
+  questions:[
+  {
+    type:"choice", kp:"立体图形综合",
+    title:"下面哪个东西是<b>圆柱</b>？（躺下能滚，站着能稳稳放住的那种）",
+    visual:"",
+    options:["🥫 罐头","⚽ 皮球","🎲 骰子","📦 纸箱"], answer:0,
+    tip:"答完去家里找实物：牙膏盒（长方体）、魔方（正方体）、水杯（圆柱）、皮球（球）。玩『我说名字你来抓』的游戏。"
+  },
+  {
+    type:"svgcut", kp:"图形分割",
+    title:"大饼干是正方形的。哪一刀切下去，能变成<b>两个三角形</b>？",
+    answer:2,
+    tip:"拿一张正方形纸真的剪一剪！横切、竖切得到两个长方形，斜着切才是两个三角形。再挑战：怎么切能分给4个人？"
+  },
+  {
+    type:"choice", kp:"测量",
+    title:"小勇士用手掌量桌子：<br>红桌子有 <b>5</b> 拃长，蓝桌子有 <b>7</b> 拃长。<br>哪张桌子更长？",
+    visual:"✋✋✋✋✋ 🟥<br>✋✋✋✋✋✋✋ 🟦",
+    options:["红桌子","蓝桌子","一样长"], answer:1,
+    tip:"课后用手拃真的量一量家里的桌子，再用绳子量孩子身高剪下来贴墙上。问：『爸爸的手大，量同一张桌子拃数是变多还是变少？』（进阶思考）"
+  }]
+},
+{
+  name:"方向迷宫", icon:"🧭",
+  story:"数学龙把宝藏藏进了迷宫！不认识左右的人会在里面永远转圈圈。先练本领，再闯迷宫！",
+  lessons:[
+  {
+    kp:"左与右",
+    title:"哪边是左，哪边是右？👋",
+    visual:"🥄 ✋ 右手<br>🤚 左手",
+    text:"你<b>吃饭拿勺子的手</b>，就是<b>右手</b>！另一只就是左手。<br>记住自己的右手，再看东西：在右手那一边的，就在<b>右边</b>；在左手那一边的，就在<b>左边</b>。",
+    magic:"🎵 拿勺子的手是右手，<br>右手指到哪，哪边就是右！",
+    tip:"现在就玩身体口令游戏（1分钟）：『举右手！摸左耳朵！右手拍左腿！』做错了哈哈大笑重来。速度越来越快，孩子会笑到停不下来，左右也就记牢了。"
+  },
+  {
+    kp:"位置与方向",
+    title:"东西在哪儿？上下前后里外 📦",
+    visual:"⭐ 上面<br>📦<br>🍄 下面",
+    text:"说清楚东西在哪儿，要用<b>位置词</b>：<br>星星在盒子的<b>上面</b>，蘑菇在盒子的<b>下面</b>；<br>还有<b>前面、后面、里面、外面、旁边</b>……<br>用对位置词，别人一听就知道去哪儿找！",
+    magic:"🎵 上下前后里外边，<br>说得清楚才能找得见！",
+    tip:"拿一个小玩具真实演一遍：放在椅子上面、桌子下面、孩子的后面。然后让孩子藏玩具、用位置词告诉你在哪儿，你去找——找错了让他纠正你。"
+  }],
+  questions:[
+  {
+    type:"choice", kp:"左与右",
+    title:"你吃饭拿勺子的手是<b>右手</b>。那么——小熊在勺子的哪一边？",
+    visual:"🐻 🥄",
+    options:["左边","右边"], answer:0,
+    tip:"先玩身体口令游戏热身：『摸右耳朵！抬左脚！右手摸左膝盖！』错了哈哈大笑重来。屏幕上的左右和孩子自己的左右方向一致，可以让他伸手比一比。"
+  },
+  {
+    type:"choice", kp:"位置与方向",
+    title:"小星星在盒子的哪里？",
+    visual:"⭐<br>📦",
+    options:["上面","下面","里面","旁边"], answer:0,
+    tip:"拿一个玩具真实演一遍：放在椅子上面、下面、你的前面、后面、左边。然后互换角色，让孩子发指令，你故意做错让他纠正——孩子最爱当小老师！"
+  },
+  {
+    type:"maze", kp:"路线判断",
+    title:"终极迷宫！用方向按钮指挥小勇士 🧒 走到宝箱 🎁，大石头 🪨 不能走！",
+    tip:"让孩子一边按一边大声说：『向上走一格！向右走一格！』如果家里有地砖或胶带，可以在地板上贴出真实格子让他亲自走，效果加倍。"
+  }]
+},
+{
+  name:"聪明泉水", icon:"💧",
+  story:"走出迷宫，我们发现一眼聪明泉！喝一口就会变聪明——但泉水精灵要先考考你。",
+  lessons:[
+  {
+    kp:"水的秘密",
+    title:"水的三个变身 🧊💧☁️",
+    visual:"🧊 冰 → 💧 水 → ☁️ 水蒸气",
+    text:"水是个变身大师，它有<b>三种模样</b>：<br>放进冰箱冻一冻，变成硬硬的<b>冰</b>；<br>平时是能流动的<b>水</b>；<br>烧开后冒出的白气，是飞上天的<b>水蒸气</b>！<br>天上的云和雨，其实都是水在变身呢。",
+    magic:"🎵 冻一冻变成冰，<br>晒一晒飞上天，<br>都是水在变魔术！",
+    tip:"最好现在就从冰箱拿一块冰放进温水杯，放在旁边。等这一关结束时回来看：冰去哪儿了？亲眼看到『冰变水』比讲一百遍都有用。"
+  },
+  {
+    kp:"比较重 & 时间",
+    title:"大的不一定重，短针告诉你几点 ⚖️🕗",
+    visual:"🎈大而轻 🆚 🪨小而重<br>🕗 短针指 8 → 8 点",
+    text:"记住一个大秘密：<b>大的东西不一定重</b>！大气球轻飘飘，小石头沉甸甸。<br>看钟表也有秘密：<b>短针是时针哥哥</b>，它指着几就是几点；<b>长针是分针弟弟</b>，指着 12 就是整点。",
+    magic:"🎵 大不一定重，掂一掂才知道；<br>短针指着几，现在就是几点钟！",
+    tip:"让孩子一手拿苹果、一手抱抱枕，问哪个大、哪个重——发现『大的反而轻』时他会很惊讶。再看家里的钟，找到短针，说说现在大约几点。"
+  },
+  {
+    kp:"等量代换",
+    title:"换一换的魔法 🍎=🍬🍬",
+    visual:"🍎 = 🍬🍬<br>🍎🍎 = 🍬🍬 + 🍬🍬",
+    text:"泉水商店有个规矩：<b>1 个苹果能换 2 颗糖</b>。<br>那 2 个苹果呢？<b>每个</b>苹果都换 2 颗糖，2 颗加 2 颗，一共 <b>4 颗</b>！<br>只要知道『1 个换几个』，再多也能算出来。",
+    magic:"🎵 一个换两个，<br>两个换四个，<br>一个一个换清楚！",
+    tip:"用豆子当糖、积木当苹果摆出来：每块积木下面摆2颗豆子。摆完再挑战：3块积木换几颗？如果1个大积木=2个小积木，1个大积木换几颗豆子？"
+  }],
+  questions:[
+  {
+    type:"choice", kp:"水的秘密",
+    title:"把冰块 🧊 放进温水里，过一会儿它会变成什么？",
+    visual:"🧊 ➡️ ？",
+    options:["💧 水","🔥 火","🪨 石头","🍬 糖"], answer:0,
+    tip:"现在就去冰箱拿一块冰放进温水杯！讲：水有三种变身——变冷结成冰（固体）、平时是流动的水（液体）、烧开冒出的白气是水蒸气（气体）。课程结束时回来看冰去哪儿了。"
+  },
+  {
+    type:"choice", kp:"比较重",
+    title:"大气球 🎈 很大很大，小石头 🪨 很小很小。<br>哪个更<b>重</b>？",
+    visual:"🎈 🆚 🪨",
+    options:["大气球","小石头","一样重"], answer:1,
+    tip:"这是关键认知：大 ≠ 重！让孩子两手分别拿苹果和抱枕感受。问：『抱枕比苹果大，为什么反而轻？』"
+  },
+  {
+    type:"clock", kp:"时间",
+    title:"看看钟表精灵：短针（时针哥哥）指着 8，长针（分针弟弟）指着 12。现在是几点？",
+    options:["8 点整","12 点整","8 点半","9 点整"], answer:0,
+    tip:"记口诀：『短针哥哥走得慢，它指几就是几点；长针弟弟指着12，就是整点。』课后拨真钟：拨出孩子起床、吃饭、睡觉的时间。"
+  },
+  {
+    type:"choice", kp:"等量代换",
+    title:"泉水商店的规矩：1 个苹果 🍎 可以换 2 颗糖 🍬。<br>小勇士拿 2 个苹果，能换几颗糖？",
+    visual:"🍎 = 🍬🍬<br>🍎🍎 = ？",
+    options:["2 颗","3 颗","4 颗","5 颗"], answer:2,
+    tip:"用豆子摆出来：每个苹果下面摆2颗糖，2个苹果就是 2+2=4 颗。进阶挑战：3个苹果换几颗？1个西瓜=2个苹果，1个西瓜换几颗糖？"
+  }]
+},
+{
+  name:"数学龙的终极挑战", icon:"🐲",
+  story:"最后一关！数学龙亲自出题：『哼，答对我这五道题，我就认输，宝藏归你！』",
+  lessons:[
+  {
+    kp:"推理 & 找规律",
+    title:"侦探本领：排除法和找规律 🔍",
+    visual:"🟥❌ 🟦❌ 🟨✅<br>🔴🔵🔴🔵🔴 → 🔵",
+    text:"<b>排除法</b>：像小侦探一样，把不可能的一个个<b>划掉</b>，剩下的就是答案！『不在红的，划掉；不在蓝的，划掉；那就是黄的！』<br><b>找规律</b>：红蓝红蓝红……大声念一念，节奏一出来，下一个是什么就知道啦！",
+    magic:"🎵 不对的划掉划掉，<br>剩下的就是答案；<br>念一念，找节奏，规律自己蹦出来！",
+    tip:"推理题让孩子说出『为什么』的过程，比答对更重要。找规律时先带他大声读三遍，读出『红蓝红蓝』的节奏，他自己就会接下去。"
+  },
+  {
+    kp:"重叠计数",
+    title:"小心！别把自己数两次 🧒",
+    visual:"🧒🧒 😀 🧒🧒<br>前面2个 + 小明 + 后面2个",
+    text:"小明排队，从前面数是第 3 个，从后面数也是第 3 个。<br>那是不是 3 + 3 = 6 个呢？<b>不对！</b><br>因为<b>小明只有一个</b>，前面数了他一次，后面又数了他一次，多数了！<br>正确的是：前面 2 个 + 小明 + 后面 2 个 = <b>5 个</b>。",
+    magic:"🎵 中间那个只有一个，<br>可别把他数两次！",
+    tip:"这是最容易掉的坑，一定用豆子摆出来：2颗 + 1颗（小明）+ 2颗 = 5颗。让孩子亲手指着数，强调中间那颗『不能数两次』。"
+  }],
+  questions:[
+  {
+    type:"choice", kp:"推理",
+    title:"数学龙说：『我藏在一个箱子里。我<b>不在</b>红箱子，也<b>不在</b>蓝箱子。』它在哪儿？",
+    visual:"🟥 🟦 🟨",
+    options:["红箱子","蓝箱子","黄箱子"], answer:2,
+    tip:"引导孩子说出排除的过程：『不在红的，划掉！不在蓝的，划掉！剩下的就是……』让孩子讲出『为什么』比答对更重要。"
+  },
+  {
+    type:"choice", kp:"推理（找规律）",
+    title:"接着排下去，下一个是什么颜色？",
+    visual:"🔴🔵🔴🔵🔴❓",
+    options:["🔴 红色","🔵 蓝色"], answer:1,
+    tip:"让孩子先大声念一遍：『红、蓝、红、蓝、红……』读出节奏感就找到规律了。课后用积木、水果自己摆规律让对方猜。"
+  },
+  {
+    type:"sudoku", kp:"数独",
+    title:"数独魔法阵：点击空格子填数字。<br>规则：每一<b>行</b>、每一<b>列</b>，1 和 2 都只能出现一次！",
+    tip:"引导语：『第一行已经有1了，还缺谁？』『这一列已经有1了，能再填1吗？』做完可以用⭐和🌙代替数字，画在纸上再玩一局。"
+  },
+  {
+    type:"choice", kp:"重叠计数",
+    title:"小朋友们排队。从前面数，小明排第 3 个；从后面数，小明也排第 3 个。这一队一共有几个人？",
+    visual:"🧒🧒<span style='font-size:44px'>😀</span>🧒🧒<br><span style='font-size:14px;color:#8d6e63'>（中间笑脸就是小明）</span>",
+    options:["6 个","5 个","4 个","3 个"], answer:1,
+    tip:"一定用豆子摆出来：前面2个 + 小明 + 后面2个 = 5个。强调：『小明只有一个，不能数两次哦！』这是重叠计数最核心的坑。"
+  },
+  {
+    type:"choice", kp:"应用题",
+    title:"数学龙最后一题：小明有 5 颗糖，分给数学龙 2 颗，自己还剩几颗？",
+    visual:"🍬🍬🍬🍬🍬 ➡️ 分走 2 颗",
+    options:["2 颗","3 颗","4 颗","7 颗"], answer:1,
+    tip:"让孩子先复述题目再列式：5−2=3。『分给、吃掉、飞走』都是减法信号词。顺口提一句：以后上学，加减法还能竖着写，像搭楼房，那是新武器！"
+  }]
+}
+];
+
+/* ================= 状态 ================= */
+let curLevel = -1, curQ = 0, curLesson = 0, stars = 0, answered = false;
+const stage = document.getElementById("stage");
+
+function renderStars(){
+  let s = "";
+  for(let i=0;i<5;i++) s += `<span class="${i<stars?'':'star-dim'}">⭐</span>`;
+  document.getElementById("starbar").innerHTML = s;
+}
+
+/* ================= 首页 ================= */
+function showStart(){
+  renderStars();
+  stage.innerHTML = `
+  <div class="card level-intro">
+    <div class="big">🐲</div>
+    <h1>城堡里住着一条数学龙！</h1>
+    <div class="story">它出了 <b>5 道关卡</b>，每闯过一关就能得到一颗星星 ⭐。<br>
+    集齐 <b>5 颗星星</b>，就能打败数学龙，拿到宝藏 🎁！<br><br>
+    小勇士，准备好了吗？</div>
+    <button class="btn" onclick="startLevel(0)">🚀 出发闯关！</button>
+    <details><summary>👨‍👩‍👧 家长使用说明</summary>
+    <p>① 全程约 50–60 分钟，每关约 10–12 分钟，关与关之间让孩子站起来跳一跳。<br>
+    ② 每关分两步：先『📖 学本领』（1–3 页趣味讲解，带魔法口诀），再『闯关答题』。讲解页请家长照着念，配合动作和实物演示。<br>
+    ③ 每页下方都有『家长这样讲 / 这样引导』，点开看讲稿提示。<br>
+    ④ 答错不批评，笑着说『再试一次』；能拿实物（豆子、积木）就配合实物玩。<br>
+    ⑤ 孩子累了可直接跳到最后一关收尾，保住『闯关成功』的完整体验最重要。</p>
+    </details>
+  </div>`;
+}
+
+/* ================= 关卡入口 ================= */
+function startLevel(i){
+  curLevel = i; curQ = 0; curLesson = 0;
+  const lv = levels[i];
+  stage.innerHTML = `
+  <div class="card level-intro">
+    <div class="kp-badge">第 ${i+1} 关</div>
+    <div class="big">${lv.icon}</div>
+    <h1>${lv.name}</h1>
+    <div class="story">${lv.story}</div>
+    <button class="btn" onclick="showLesson()">📖 先学本领！</button>
+  </div>`;
+}
+
+/* ================= 学本领讲解页 ================= */
+function showLesson(){
+  const lv = levels[curLevel];
+  // 没有讲解页或已讲完 → 进入答题
+  if(!lv.lessons || curLesson >= lv.lessons.length){ showQuestion(); return; }
+  const ls = lv.lessons[curLesson];
+  const total = lv.lessons.length;
+  const prog = `<div class="progress">📖 学本领 · 第 ${curLesson+1} / ${total} 页</div>`;
+  const isLast = curLesson === total-1;
+  stage.innerHTML = `${prog}
+  <div class="card">
+    <div class="kp-badge learn">📖 学本领：${ls.kp}</div>
+    <h2>${ls.title}</h2>
+    ${ls.visual?`<div class="lesson-visual">${ls.visual}</div>`:""}
+    <div class="lesson-text">${ls.text}</div>
+    ${ls.magic?`<div class="magic-word">${ls.magic}</div>`:""}
+    <button class="btn" onclick="nextLesson()">${isLast?"本领学会啦，去闯关！💪":"下一页 ➡️"}</button>
+    <details><summary>👨‍👩‍👧 家长这样讲</summary><p>${ls.tip}</p></details>
+  </div>`;
+}
+function nextLesson(){ curLesson++; showLesson(); }
+
+/* ================= 出题 ================= */
+function showQuestion(){
+  answered = false;
+  const lv = levels[curLevel], q = lv.questions[curQ];
+  const prog = `<div class="progress">${lv.icon} ${lv.name} · 第 ${curQ+1} / ${lv.questions.length} 题</div>`;
+
+  if(q.type === "maze"){ renderMaze(prog, q); return; }
+  if(q.type === "sudoku"){ renderSudoku(prog, q); return; }
+  if(q.type === "svgcut"){ renderSvgCut(prog, q); return; }
+  if(q.type === "clock"){ renderClock(prog, q); return; }
+
+  const oneCol = q.options.some(o=>o.length>6);
+  stage.innerHTML = `${prog}
+  <div class="card">
+    <div class="kp-badge">📌 ${q.kp}</div>
+    <h2>${q.title}</h2>
+    ${q.visual?`<div class="visual">${q.visual}</div>`:""}
+    <div class="opts ${oneCol?'one-col':''}">
+      ${q.options.map((o,i)=>`<button class="opt" onclick="pick(this,${i})">${o}</button>`).join("")}
+    </div>
+    <div class="feedback" id="fb"></div>
+    <button class="btn green hidden" id="nextBtn" onclick="nextQ()">下一题 ➡️</button>
+    <details><summary>👨‍👩‍👧 家长这样引导</summary><p>${q.tip}</p></details>
+  </div>`;
+}
+
+const praise = ["太棒了！🎉","答对啦！你真厉害！🌟","哇！小勇士好聪明！💪","完全正确！🎊"];
+const retry = ["差一点点，再想想～🤔","没关系，再试一次！💡","嗯…要不要数一数再选？🍀"];
+
+function pick(el, i){
+  if(answered) return;
+  const q = levels[curLevel].questions[curQ];
+  const fb = document.getElementById("fb");
+  if(i === q.answer){
+    answered = true;
+    el.classList.add("correct");
+    fb.className = "feedback ok";
+    fb.textContent = praise[Math.floor(Math.random()*praise.length)];
+    document.getElementById("nextBtn").classList.remove("hidden");
+  } else {
+    el.classList.add("wrong");
+    fb.className = "feedback no";
+    fb.textContent = retry[Math.floor(Math.random()*retry.length)];
+    setTimeout(()=>el.classList.remove("wrong"), 500);
+  }
+}
+
+function nextQ(){
+  curQ++;
+  const lv = levels[curLevel];
+  if(curQ < lv.questions.length){ showQuestion(); }
+  else { levelClear(); }
+}
+
+/* ================= 过关 ================= */
+function levelClear(){
+  stars = curLevel + 1;
+  renderStars();
+  if(curLevel === levels.length-1){ showEnd(); return; }
+  stage.innerHTML = `
+  <div class="card level-intro">
+    <div class="confetti">🎉 ⭐ 🎉</div>
+    <h1>第 ${curLevel+1} 关通过！</h1>
+    <div class="story">你得到了第 <b>${stars}</b> 颗星星！<br>
+    💡 休息一下：站起来跳 5 下、喝口水，再继续冒险！</div>
+    <button class="btn" onclick="startLevel(${curLevel+1})">前往第 ${curLevel+2} 关 ${levels[curLevel+1].icon} ➡️</button>
+  </div>`;
+}
+
+function showEnd(){
+  stage.innerHTML = `
+  <div class="card level-intro">
+    <div class="confetti">🎊🏆🎊</div>
+    <h1>⭐⭐⭐⭐⭐<br>数学龙认输啦！</h1>
+    <div class="big">🐲💦 ➡️ 🎁</div>
+    <div class="story">恭喜小勇士集齐 5 颗星星，打败了数学龙，赢得了宝藏！<br><br>
+    你今天闯过了：🌲 数字森林、🏰 图形城堡、🧭 方向迷宫、💧 聪明泉水、🐲 终极挑战！<br><br>
+    <b>问问自己：我最喜欢哪一关？</b>明天我们把它玩出新花样！</div>
+    <button class="btn" onclick="restart()">🔄 再玩一次</button>
+    <details><summary>👨‍👩‍👧 给家长的收尾建议</summary>
+    <p>① 现在去看看第4关那杯冰水——冰去哪儿了？完成『水的秘密』观察闭环。<br>
+    ② 把真实小奖品藏起来，用方向指令（前进两步、向左转…）让孩子找到，顺便复习路线判断。<br>
+    ③ 记下孩子最感兴趣和最卡壳的知识点，之后每天只针对一个点玩15分钟。</p>
+    </details>
+  </div>`;
+}
+
+function restart(){ stars = 0; curLevel = -1; curQ = 0; showStart(); }
+
+/* ================= 特殊题型：切正方形 ================= */
+function renderSvgCut(prog, q){
+  const sq = (line)=>`<svg width="90" height="90" viewBox="0 0 90 90">
+    <rect x="10" y="10" width="70" height="70" fill="#ffe0b2" stroke="#8d6e63" stroke-width="3" rx="4"/>
+    ${line}</svg>`;
+  const lines = [
+    sq('<line x1="10" y1="45" x2="80" y2="45" stroke="#e53935" stroke-width="4" stroke-dasharray="8 5"/>'),
+    sq('<line x1="45" y1="10" x2="45" y2="80" stroke="#e53935" stroke-width="4" stroke-dasharray="8 5"/>'),
+    sq('<line x1="10" y1="10" x2="80" y2="80" stroke="#e53935" stroke-width="4" stroke-dasharray="8 5"/>')
+  ];
+  const labels = ["横着切","竖着切","斜着切"];
+  stage.innerHTML = `${prog}
+  <div class="card">
+    <div class="kp-badge">📌 ${q.kp}</div>
+    <h2>${q.title}</h2>
+    <div class="opts" style="grid-template-columns:repeat(3,1fr)">
+      ${lines.map((s,i)=>`<button class="opt svg-opt" onclick="pick(this,${i})">${s}<div style="font-size:14px;margin-top:4px">${labels[i]}</div></button>`).join("")}
+    </div>
+    <div class="feedback" id="fb"></div>
+    <button class="btn green hidden" id="nextBtn" onclick="nextQ()">下一题 ➡️</button>
+    <details><summary>👨‍👩‍👧 家长这样引导</summary><p>${q.tip}</p></details>
+  </div>`;
+}
+
+/* ================= 特殊题型：钟表 ================= */
+function renderClock(prog, q){
+  const clock = `<svg width="150" height="150" viewBox="0 0 120 120" style="display:block;margin:10px auto">
+    <circle cx="60" cy="60" r="54" fill="#fffde7" stroke="#5d4037" stroke-width="4"/>
+    <text x="60" y="20" text-anchor="middle" font-size="13" font-weight="bold" fill="#5d4037">12</text>
+    <text x="104" y="65" text-anchor="middle" font-size="13" font-weight="bold" fill="#5d4037">3</text>
+    <text x="60" y="112" text-anchor="middle" font-size="13" font-weight="bold" fill="#5d4037">6</text>
+    <text x="16" y="65" text-anchor="middle" font-size="13" font-weight="bold" fill="#5d4037">9</text>
+    <text x="38" y="93" text-anchor="middle" font-size="12" font-weight="bold" fill="#e53935">8</text>
+    <line x1="60" y1="60" x2="60" y2="22" stroke="#1976d2" stroke-width="4" stroke-linecap="round"/>
+    <line x1="60" y1="60" x2="37" y2="74" stroke="#e53935" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="60" cy="60" r="4" fill="#5d4037"/>
+  </svg>
+  <div style="text-align:center;font-size:13px;color:#8d6e63">🔴 红色短针 = 时针哥哥　🔵 蓝色长针 = 分针弟弟</div>`;
+  stage.innerHTML = `${prog}
+  <div class="card">
+    <div class="kp-badge">📌 ${q.kp}</div>
+    <h2>${q.title}</h2>
+    ${clock}
+    <div class="opts">
+      ${q.options.map((o,i)=>`<button class="opt" onclick="pick(this,${i})">${o}</button>`).join("")}
+    </div>
+    <div class="feedback" id="fb"></div>
+    <button class="btn green hidden" id="nextBtn" onclick="nextQ()">下一题 ➡️</button>
+    <details><summary>👨‍👩‍👧 家长这样引导</summary><p>${q.tip}</p></details>
+  </div>`;
+}
+
+/* ================= 特殊题型：迷宫 ================= */
+let mazePos, mazeDone;
+const ROCKS = ["1,1","2,3","3,1"];   // "row,col"
+const GOAL = "3,3";
+function renderMaze(prog, q){
+  mazePos = [0,0]; mazeDone = false;
+  stage.innerHTML = `${prog}
+  <div class="card">
+    <div class="kp-badge">📌 ${q.kp}</div>
+    <h2>${q.title}</h2>
+    <div class="maze" id="mazeGrid"></div>
+    <div class="dpad">
+      <button class="dbtn blank"></button>
+      <button class="dbtn" onclick="mv(-1,0)">⬆️</button>
+      <button class="dbtn blank"></button>
+      <button class="dbtn" onclick="mv(0,-1)">⬅️</button>
+      <button class="dbtn" onclick="mv(1,0)">⬇️</button>
+      <button class="dbtn" onclick="mv(0,1)">➡️</button>
+    </div>
+    <div class="feedback" id="fb"></div>
+    <button class="btn green hidden" id="nextBtn" onclick="nextQ()">下一题 ➡️</button>
+    <details><summary>👨‍👩‍👧 家长这样引导</summary><p>${q.tip}</p></details>
+  </div>`;
+  drawMaze();
+}
+function drawMaze(){
+  const g = document.getElementById("mazeGrid");
+  let html = "";
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++){
+    const key = r+","+c;
+    let content = "", cls = "cell";
+    if(ROCKS.includes(key)){ content="🪨"; cls+=" rock"; }
+    if(key===GOAL) content = (mazePos[0]===3&&mazePos[1]===3)?"🧒":"🎁";
+    if(mazePos[0]===r&&mazePos[1]===c&&key!==GOAL) content="🧒";
+    html += `<div class="${cls}">${content}</div>`;
+  }
+  g.innerHTML = html;
+}
+function mv(dr,dc){
+  if(mazeDone) return;
+  const nr = mazePos[0]+dr, nc = mazePos[1]+dc;
+  const fb = document.getElementById("fb");
+  if(nr<0||nr>3||nc<0||nc>3){ fb.className="feedback no"; fb.textContent="撞墙啦！换个方向～🧱"; return; }
+  if(ROCKS.includes(nr+","+nc)){ fb.className="feedback no"; fb.textContent="前面是大石头，绕开它！🪨"; return; }
+  mazePos = [nr,nc]; drawMaze();
+  if(nr+","+nc === GOAL){
+    mazeDone = true;
+    fb.className="feedback ok"; fb.textContent="找到宝箱啦！小勇士太厉害了！🎉";
+    document.getElementById("nextBtn").classList.remove("hidden");
+  } else {
+    fb.className="feedback"; fb.textContent="";
+  }
+}
+
+/* ================= 特殊题型：数独 ================= */
+/* 棋盘: 固定 (0,0)=1, (1,1)=1；答案 (0,1)=2, (1,0)=2 */
+let sk;
+function renderSudoku(prog, q){
+  sk = [[1,0],[0,1]]; // 0 = 空
+  stage.innerHTML = `${prog}
+  <div class="card">
+    <div class="kp-badge">📌 ${q.kp}</div>
+    <h2>${q.title}</h2>
+    <div class="sudoku" id="skGrid"></div>
+    <div class="hint">👆 点击虚线空格，在 1 和 2 之间切换</div>
+    <button class="btn" id="skCheck" onclick="checkSudoku()">检查魔法阵 ✨</button>
+    <div class="feedback" id="fb"></div>
+    <button class="btn green hidden" id="nextBtn" onclick="nextQ()">下一题 ➡️</button>
+    <details><summary>👨‍👩‍👧 家长这样引导</summary><p>${q.tip}</p></details>
+  </div>`;
+  drawSudoku();
+}
+function drawSudoku(){
+  const fixed = [[true,false],[false,true]];
+  let html = "";
+  for(let r=0;r<2;r++)for(let c=0;c<2;c++){
+    if(fixed[r][c]) html += `<div class="sq fixed">${sk[r][c]}</div>`;
+    else html += `<div class="sq free" onclick="tapSq(${r},${c})">${sk[r][c]||""}</div>`;
+  }
+  document.getElementById("skGrid").innerHTML = html;
+}
+function tapSq(r,c){
+  sk[r][c] = sk[r][c]===0 ? 1 : (sk[r][c]===1 ? 2 : 0);
+  drawSudoku();
+}
+function checkSudoku(){
+  const fb = document.getElementById("fb");
+  if(sk[0][1]===2 && sk[1][0]===2){
+    fb.className="feedback ok"; fb.textContent="魔法阵完成！每行每列都不重复！🎉";
+    document.getElementById("nextBtn").classList.remove("hidden");
+    document.getElementById("skCheck").classList.add("hidden");
+  } else if(sk[0][1]===0 || sk[1][0]===0){
+    fb.className="feedback no"; fb.textContent="还有空格没填哦～👆";
+  } else {
+    fb.className="feedback no"; fb.textContent="有数字重复啦！看看每一行、每一列～🔍";
+  }
+}
+
+showStart();
+</script>
+</body>
+</html>

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>好习惯小超人训练营</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    font-family: "PingFang SC","Microsoft YaHei",sans-serif;
+    background: linear-gradient(180deg,#ffe9c7 0%,#fff5e0 40%,#e0f7ff 100%);
+    min-height:100vh; display:flex; justify-content:center; padding:12px;
+  }
+  .app { width:100%; max-width:560px; }
+  .topbar {
+    background:#fff; border-radius:20px; padding:10px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+    box-shadow:0 4px 12px rgba(0,0,0,.08); margin-bottom:14px;
+  }
+  .topbar .title { font-weight:800; color:#e91e63; font-size:17px; }
+  .medals { font-size:22px; letter-spacing:2px; }
+  .medal-dim { filter:grayscale(1); opacity:.35; }
+  .card {
+    background:#fff; border-radius:24px; padding:22px 20px;
+    box-shadow:0 6px 20px rgba(0,0,0,.1); animation:pop .35s ease;
+  }
+  @keyframes pop { from{transform:scale(.94);opacity:0} to{transform:scale(1);opacity:1} }
+  .kp-badge {
+    display:inline-block; background:#ffe0ec; color:#d81b60;
+    border-radius:99px; padding:4px 14px; font-size:13px; font-weight:700; margin-bottom:10px;
+  }
+  .kp-badge.learn { background:#e1f5fe; color:#0277bd; }
+  h1 { font-size:26px; color:#5d4037; text-align:center; line-height:1.4; }
+  h2 { font-size:21px; color:#4e342e; line-height:1.5; margin-bottom:6px; }
+  .visual {
+    font-size:34px; text-align:center; margin:16px 0; line-height:1.6;
+    word-break:break-all; user-select:none;
+  }
+  .opts { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
+  .opts.one-col { grid-template-columns:1fr; }
+  .opt {
+    background:#fff3e0; border:3px solid #ffcc80; border-radius:18px;
+    padding:16px 10px; font-size:19px; font-weight:800; color:#5d4037;
+    cursor:pointer; text-align:center; transition:transform .1s; line-height:1.5;
+  }
+  .opt:active { transform:scale(.95); }
+  .opt.correct { background:#c8f7c5; border-color:#4caf50; animation:bounce .5s; }
+  .opt.wrong { background:#ffcdd2; border-color:#e57373; animation:shake .4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+  @keyframes bounce { 0%{transform:scale(1)} 40%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  .feedback { text-align:center; font-size:19px; font-weight:800; min-height:30px; margin-top:14px; }
+  .feedback.ok { color:#2e7d32; } .feedback.no { color:#c62828; }
+  .btn {
+    display:block; width:100%; margin-top:16px; padding:16px;
+    background:linear-gradient(135deg,#ec407a,#d81b60); color:#fff;
+    border:none; border-radius:18px; font-size:20px; font-weight:800;
+    cursor:pointer; box-shadow:0 4px 0 #ad1457;
+  }
+  .btn:active { transform:translateY(3px); box-shadow:0 1px 0 #ad1457; }
+  .btn.green { background:linear-gradient(135deg,#66bb6a,#43a047); box-shadow:0 4px 0 #2e7d32; }
+  .btn.blue { background:linear-gradient(135deg,#42a5f5,#1e88e5); box-shadow:0 4px 0 #1565c0; }
+  .btn.hidden { display:none; }
+  details {
+    margin-top:16px; background:#f3f7ff; border-radius:14px; padding:10px 14px;
+    border:2px dashed #90caf9;
+  }
+  summary { cursor:pointer; font-weight:700; color:#1565c0; font-size:15px; }
+  details p { margin-top:8px; color:#37474f; font-size:15px; line-height:1.7; }
+  .progress { text-align:center; color:#8d6e63; font-size:14px; margin-bottom:8px; font-weight:700; }
+  .lesson-visual {
+    font-size:38px; text-align:center; margin:14px 0; line-height:1.7;
+    background:#f1f8e9; border-radius:16px; padding:14px; user-select:none;
+  }
+  .lesson-text { font-size:17px; color:#4e342e; line-height:2; margin-top:10px; }
+  .lesson-text b { color:#e65100; }
+  .magic-word {
+    background:#fff3e0; border:2px dashed #ffb74d; border-radius:14px;
+    padding:10px 14px; margin-top:12px; font-size:17px; font-weight:800;
+    color:#e65100; text-align:center; line-height:1.8;
+  }
+  /* 整理书包游戏 */
+  .pack-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
+  .pack-item {
+    background:#f5f5f5; border:3px solid #e0e0e0; border-radius:16px;
+    padding:10px 6px; text-align:center; cursor:pointer; transition:transform .1s;
+  }
+  .pack-item:active { transform:scale(.94); }
+  .pack-item .pi-icon { font-size:36px; }
+  .pack-item .pi-name { font-size:14px; font-weight:700; color:#5d4037; margin-top:4px; }
+  .pack-item.picked { background:#e3f2fd; border-color:#42a5f5; }
+  .pack-item.good { background:#c8f7c5; border-color:#4caf50; }
+  .pack-item.bad { background:#ffcdd2; border-color:#e57373; animation:shake .4s; }
+  /* 排顺序游戏 */
+  .seq-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .seq-item {
+    position:relative; background:#fffde7; border:3px solid #ffe082; border-radius:16px;
+    padding:12px 8px; text-align:center; cursor:pointer; transition:transform .1s;
+  }
+  .seq-item:active { transform:scale(.95); }
+  .seq-item .si-icon { font-size:34px; }
+  .seq-item .si-name { font-size:14px; font-weight:700; color:#5d4037; margin-top:4px; }
+  .seq-item.done { background:#e8f5e9; border-color:#81c784; }
+  .seq-num {
+    position:absolute; top:-10px; left:-10px; width:30px; height:30px;
+    background:#43a047; color:#fff; border-radius:50%; font-size:16px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,.2);
+  }
+  .confetti { font-size:40px; text-align:center; animation:float 1.6s ease infinite alternate; }
+  @keyframes float { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+  .level-intro { text-align:center; }
+  .level-intro .big { font-size:64px; margin:10px 0; }
+  .story { font-size:17px; color:#5d4037; line-height:1.9; margin:12px 0; text-align:left;
+    background:#fff8e1; border-radius:14px; padding:14px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="title">🦸 好习惯小超人训练营</div>
+    <div class="medals" id="medalbar"></div>
+  </div>
+  <div id="stage"></div>
+</div>
+
+<script>
+/* ================= 数据 ================= */
+const levels = [
+{
+  name:"早晨出发站", icon:"🌅",
+  story:"『懒懒虫』最喜欢让小朋友赖床、不刷牙、等着大人喂饭穿衣！想打败它，先要学会照顾自己的本领。",
+  lessons:[
+  {
+    kp:"早睡早起",
+    title:"太阳公公的约定 🌞",
+    visual:"🌙 晚上 9 点前睡<br>🌞 早上 7 点前起",
+    text:"我们的身体像小手机，<b>睡觉就是在充电</b>！<br>晚上 <b>9 点前</b>上床，充满电；早上 <b>7 点前</b>起床，电量满格！<br>睡够了觉，长得高、记得牢、上课不打瞌睡。<br>晚睡的小朋友，第二天就像没充电的手机——没劲儿！",
+    magic:"🎵 九点睡，七点起，<br>充满电的小超人最有力气！",
+    tip:"和孩子一起约定固定的睡觉时间，画一张『睡前流程图』贴在床头：刷牙→上厕所→听故事→关灯。重点是每天固定顺序，身体会形成生物钟。上小学后 8:00 前到校，倒推就知道必须早睡。"
+  },
+  {
+    kp:"自理能力",
+    title:"我的事情我来做 💪",
+    visual:"👕 自己穿　🦷 自己刷<br>🥣 自己吃　👟 自己系",
+    text:"上小学以后，老师不会帮你穿衣服、喂你吃饭哦！<br>穿衣、刷牙、洗脸、吃饭、上厕所……这些都是<b>自己的事情</b>。<br>自己的事情<b>自己做</b>，做得慢没关系，<b>每天都做</b>就会越来越快！<br>会照顾自己的小朋友，才是真正的小超人。",
+    magic:"🎵 自己的事情自己做，<br>今天慢一点，明天快一点！",
+    tip:"从今天起把『帮他做』改成『看他做』：宁可早起 10 分钟等他自己穿衣服，也不要因为赶时间代劳。做完给具体表扬：『你今天扣扣子比昨天快了！』而不是笼统的『真棒』。"
+  }],
+  questions:[
+  {
+    type:"seq", kp:"早晨的顺序",
+    title:"懒懒虫把早晨的事情打乱啦！<br>按正确的顺序，一个一个点出来：",
+    items:[
+      { icon:"⏰", name:"起床", order:0 },
+      { icon:"👕", name:"穿衣服", order:1 },
+      { icon:"🦷", name:"刷牙洗脸", order:2 },
+      { icon:"🥣", name:"吃早餐", order:3 }
+    ],
+    tip:"让孩子边点边大声说：『第一步起床，第二步穿衣服……』说出顺序就是在建立流程感。明天早上就照这个顺序来，可以打印一张贴在门上打勾。"
+  },
+  {
+    type:"choice", kp:"早睡早起",
+    title:"明天要上学，晚上 9 点了，动画片还有一集没看完。小超人应该怎么办？",
+    visual:"🕘 ➕ 📺 = ❓",
+    options:["看完这集再睡","关掉电视去睡觉，明天再看","让妈妈陪着看到10点","偷偷躲在被子里看"], answer:1,
+    tip:"答完聊一聊：『如果晚睡了，第二天会怎么样？』让孩子自己说出『起不来、没精神』。可以约定：提前把『明天再看』写在小纸条上，孩子会更容易接受暂停。"
+  },
+  {
+    type:"choice", kp:"自理能力",
+    title:"早上穿衣服，扣子好难扣呀！小超人应该怎么办？",
+    visual:"👕 ➕ 😣 = ❓",
+    options:["哭着喊妈妈来穿","慢慢试，实在不行再请大人帮一点点","不扣了，敞着穿","今天不上学了"], answer:1,
+    tip:"关键句教给孩子：『我先自己试一试。』遇到困难先尝试、再求助，这个顺序比会不会扣扣子重要一百倍。平时可以玩『扣扣子比赛』练手指精细动作。"
+  }]
+},
+{
+  name:"书包整理站", icon:"🎒",
+  story:"『丢丢怪』专门偷不整理书包的小朋友的东西：橡皮不见了！课本忘带了！打败它的办法只有一个——自己整理！",
+  lessons:[
+  {
+    kp:"整理书包",
+    title:"书包里的小房间 🏠",
+    visual:"🎒 = 📚 + ✏️ + 💧",
+    text:"书包就像一座小房子，每样东西都有<b>自己的房间</b>：<br>大口袋住<b>课本</b>，中口袋住<b>文具盒</b>，侧口袋住<b>水壶</b>。<br>玩具、零食、平板不上学，它们<b>不住</b>书包里！<br>最重要的秘密：书包要在<b>前一天晚上</b>整理好，早上就不慌啦。",
+    magic:"🎵 睡觉之前理书包，<br>东西回家不乱跑，<br>明天早上不迟到！",
+    tip:"给书包分区贴上小标签（画图也行）。从今天起立规矩：书包只能孩子自己理，家长只做最后『检查员』。丢了东西不批评也不补救，让他体验一次自然结果，比说教管用。"
+  },
+  {
+    kp:"物品归位",
+    title:"每样东西都有家 🧸",
+    visual:"🧸 ➡️ 🧺　📕 ➡️ 📚<br>👟 ➡️ 🚪",
+    text:"玩具的家是玩具箱，书的家是书架，鞋子的家是门口鞋架。<br><b>用完的东西送回家</b>，下次要用一找就到！<br>不送回家会怎样？丢丢怪就会把它们藏起来——<br>『我的橡皮呢？』『我的另一只袜子呢？』找不到啦！",
+    magic:"🎵 从哪儿拿的放回哪儿，<br>玩完一样收一样！",
+    tip:"降低归位难度：收纳盒别太多太细，5-7 岁用『大分类』就好（玩具一箱、书一格）。每晚睡前放 3 分钟『归位音乐』，音乐结束前送所有东西回家，把收拾变成游戏而不是命令。"
+  }],
+  questions:[
+  {
+    type:"pack", kp:"整理书包",
+    title:"明天要上学啦！点一点：哪些东西应该住进书包？<br><span style='font-size:15px;color:#8d6e63'>（把该带的都点亮，再点检查书包）</span>",
+    items:[
+      { icon:"📚", name:"课本", inBag:true },
+      { icon:"✏️", name:"文具盒", inBag:true },
+      { icon:"💧", name:"水壶", inBag:true },
+      { icon:"🚗", name:"玩具车", inBag:false },
+      { icon:"🍭", name:"棒棒糖", inBag:false },
+      { icon:"📱", name:"平板电脑", inBag:false }
+    ],
+    tip:"做完游戏，今晚就照着真实演一遍：让孩子自己把明天的东西装进书包。问他：『为什么玩具车不能去上学？』让他自己说出理由（上课会想玩、会弄丢）。"
+  },
+  {
+    type:"choice", kp:"物品归位",
+    title:"搭完积木，小超人要去吃饭了。积木应该怎么办？",
+    visual:"🧱🧱🧱 ➡️ ❓",
+    options:["扔在地上，明天再说","送回积木箱，下次再玩","踢到床底下藏起来","让奶奶来收"], answer:1,
+    tip:"如果孩子说『我还想留着明天继续搭』，这是好想法！可以约定一个『作品保护区』（如桌子一角），没搭完的作品放那里，其他的必须归位——规则里留一点弹性，孩子更愿意遵守。"
+  },
+  {
+    type:"choice", kp:"提前准备",
+    title:"整理书包的最好时间是什么时候？",
+    visual:"🎒 ➕ 🕐 = ❓",
+    options:["前一天晚上睡觉前","早上出门前 1 分钟","到了学校再说","想起来的时候"], answer:0,
+    tip:"讲一个对比小故事：小明头天晚上理好书包，早上慢慢吃早餐；小刚早上才找课本，急得哇哇哭还迟到了。问孩子：『你想当小明还是小刚？』"
+  }]
+},
+{
+  name:"课堂魔法站", icon:"📚",
+  story:"小学的教室里有三个魔法：坐得正、听得清、举手说。学会它们，老师的本领就会源源不断地飞进你的小脑袋！",
+  lessons:[
+  {
+    kp:"坐姿",
+    title:"神气的小坐姿 🪑",
+    visual:"🧍 头正 · 身直<br>🦶 脚放平　✋ 手放好",
+    text:"上课的坐姿有个口诀：<b>头正、身直、脚放平</b>！<br>小背挺直像小松树 🌲，两脚放平踩地板，小手放在桌子上。<br>趴着、歪着、跷椅子，不但学不进去，眼睛还会变近视哦！<br>坐得神气的小朋友，老师一眼就喜欢！",
+    magic:"🎵 头正正，背直直，<br>小脚放平手放好，<br>我是神气小学生！",
+    tip:"玩『木头人坐姿赛』：喊口令『上课坐姿！』全家立刻坐好，坚持越久越厉害，孩子几乎一定赢。写字画画时坐姿口诀同样适用，再加一句『眼睛离书一尺远』。每次只提醒一个要点，别全部一起纠正。"
+  },
+  {
+    kp:"倾听与发言",
+    title:"小耳朵和小手的魔法 👂✋",
+    visual:"👂 别人说话认真听<br>✋ 我想说话先举手",
+    text:"第一个魔法是<b>倾听</b>：老师和同学说话时，眼睛看着他，嘴巴闭好，认真听完。听清楚了，才知道该做什么！<br>第二个魔法是<b>举手</b>：想说话、想提问，先把小手举得高高的，老师叫到名字再说。<br>大家都抢着喊，谁的话也听不清；轮流说，每个人都能被听见。",
+    magic:"🎵 你说我听，我说你听，<br>想发言，先举手，<br>老师叫我我再说！",
+    tip:"在家玩『课堂角色扮演』：家长当老师提问（如『春天有什么花？』），孩子必须举手、被点名后起立回答。再互换角色让孩子当老师。同时练『听指令』：一次说两三个指令（先摸头，再拍手，最后转个圈），锻炼倾听记忆。"
+  }],
+  questions:[
+  {
+    type:"choice", kp:"坐姿",
+    title:"哪一种是上课的正确坐姿？",
+    visual:"",
+    options:["🧍 头正身直，脚放平，手放好","🛌 趴在桌子上","🙃 歪着身子跷椅子","🦵 把脚放到椅子上"], answer:0,
+    tip:"答完立刻实战：『来，摆一个神气坐姿给我看！』拍张照片贴在书桌前当『标准照』。以后写作业前看一眼照片再开始。"
+  },
+  {
+    type:"choice", kp:"倾听",
+    title:"老师正在讲故事，小超人突然想起一件好玩的事，特别想马上告诉同桌。应该怎么办？",
+    visual:"👩‍🏫 📖 ➕ 💭 = ❓",
+    options:["马上转头跟同桌说","先记在心里，下课再说","大声讲给全班听","拉老师的衣服说"], answer:1,
+    tip:"教孩子一个具体方法：想说的话像小鸟一样先关进心里的小笼子，下课再放出来。可以在家练习：吃饭时想插话，先举手示意，等别人说完。"
+  },
+  {
+    type:"choice", kp:"举手发言",
+    title:"老师问：『谁知道答案呀？』小超人知道！应该怎么做？",
+    visual:"👩‍🏫❓ ➕ 💡 = ❓",
+    options:["直接大声喊出答案","举手，等老师叫我再回答","戳同桌让他帮我说","知道也不说"], answer:1,
+    tip:"很多孩子上学后不敢举手。平时多练『在家发言』：家庭晚餐轮流分享『今天最开心的事』，孩子举手发言、全家鼓掌，攒够勇气到课堂就敢举手了。"
+  }]
+},
+{
+  name:"时间小主人站", icon:"⏰",
+  story:"最狡猾的怪兽来了——『拖拉怪』！它会说：『再玩一会儿嘛~』『等一下再做嘛~』被它缠上的小朋友，什么事都做不完！",
+  lessons:[
+  {
+    kp:"先完成再玩",
+    title:"先苦后甜的魔法顺序 🍬",
+    visual:"✍️ 先做该做的<br>⬇️<br>🎮 再玩想玩的",
+    text:"事情分两种：<b>该做的</b>（作业、任务）和<b>想做的</b>（玩、看动画）。<br>魔法顺序是：<b>先做该做的，再做想做的</b>！<br>为什么？先玩的话，心里总惦记着作业，玩不痛快；<br>先做完，剩下的时间随便玩，玩得特别香！",
+    magic:"🎵 先做该做的，<br>再玩想玩的，<br>做完再玩最痛快！",
+    tip:"上小学后每天都有作业，这是最需要提前养的习惯。从现在起给孩子每天一个 10 分钟的『小任务』（画画/描红/拼图），完成后再自由玩。让他体验『做完再玩真轻松』的感觉。"
+  },
+  {
+    kp:"不拖拉 & 专注",
+    title:"打败拖拉怪的两件武器 ⚔️",
+    visual:"⏳ 沙漏计时<br>🎯 一次只做一件事",
+    text:"第一件武器：<b>计时器</b>！『10 分钟收完玩具』——和时间赛跑，拖拉怪最怕这个！<br>第二件武器：<b>一次只做一件事</b>！吃饭就好好吃饭，画画就专心画画。<br>一边吃饭一边玩玩具？两件事都做不好，拖拉怪就赢啦！",
+    magic:"🎵 做事就像小火车，<br>一站到了再下一站，<br>不能两站一起跑！",
+    tip:"给孩子准备一个可视化计时器（沙漏或番茄钟最好，能『看见』时间流走）。任务时间设短一点让他赢：预计10分钟的事说『你15分钟能完成吗？』提前完成的成就感是治拖拉的特效药。"
+  }],
+  questions:[
+  {
+    type:"choice", kp:"先完成再玩",
+    title:"放学回家，小超人又想玩游戏，又有幼儿园的画画任务没完成。先做哪个？",
+    visual:"🎨 🆚 🎮",
+    options:["先玩游戏，玩累了再画","先画完画，再痛痛快快玩","一边玩一边画","都不做，看电视"], answer:1,
+    tip:"问孩子：『如果先玩，玩的时候心里想着还有画没画完，舒服吗？』让他体会『心里悬着事』的感觉。答对后击掌约定：这就是我们家的新规矩！"
+  },
+  {
+    type:"seq", kp:"放学后的安排",
+    title:"放学回家后，把事情按最棒的顺序排出来：",
+    items:[
+      { icon:"🧼", name:"洗手", order:0 },
+      { icon:"✍️", name:"完成小任务", order:1 },
+      { icon:"🎮", name:"自由玩耍", order:2 },
+      { icon:"🛁", name:"洗澡睡觉", order:3 }
+    ],
+    tip:"排完把这个顺序画成『放学四步图』贴在家里。每天回家照着走，坚持三周就会变成不用提醒的自动流程——习惯的本质就是固定顺序的重复。"
+  },
+  {
+    type:"choice", kp:"不拖拉",
+    title:"妈妈说：『5 分钟后出门啦！』拖拉怪在耳边说：『再玩一小会儿嘛~』小超人应该怎么办？",
+    visual:"⏰ 🆚 😈",
+    options:["听拖拉怪的，再玩一会儿","马上收好玩具，准备出门","假装没听见","哭闹说不想出门"], answer:1,
+    tip:"以后出门前都提前 5 分钟预告（『再玩5分钟就出发』），给孩子缓冲时间，比突然催促有效得多。孩子按时行动后要说出来：『你打败拖拉怪了！』给坏习惯起名字，孩子会主动跟它对抗。"
+  }]
+},
+{
+  name:"礼貌安全站", icon:"🤝",
+  story:"最后一站！小超人要独自上学了，需要两样护身法宝：让人喜欢的『礼貌魔法』，和保护自己的『安全铠甲』！",
+  lessons:[
+  {
+    kp:"礼貌用语",
+    title:"五句神奇的魔法话 💬",
+    visual:"🌞 你好　🙏 谢谢<br>😊 请　🙇 对不起　👋 再见",
+    text:"有五句话有神奇的魔力，说出来别人就会喜欢你：<br>见面说<b>『你好』</b>，得到帮助说<b>『谢谢』</b>，<br>请别人帮忙加个<b>『请』</b>字，做错事说<b>『对不起』</b>，分开时说<b>『再见』</b>。<br>会说魔法话的小朋友，到哪儿都有好朋友！",
+    magic:"🎵 你好、谢谢、请，<br>对不起、再见，<br>五句魔法话，人人都喜欢！",
+    tip:"礼貌是模仿出来的，不是要求出来的。家长先对孩子用这五句话（请他递东西时说『请』，他帮忙后说『谢谢』）。入学第一周每天出门前演练一句：见到老师说『老师好』。"
+  },
+  {
+    kp:"安全自护",
+    title:"保护自己的安全铠甲 🛡️",
+    visual:"🚦 红灯停 绿灯行<br>📞 记住爸妈电话<br>🙅 陌生人给的不要",
+    text:"小超人的安全铠甲有三块：<br>第一块：过马路<b>红灯停、绿灯行</b>，走斑马线，牵好大人的手。<br>第二块：<b>记住爸爸妈妈的名字和电话</b>，走丢了才能找到家。<br>第三块：陌生人给的糖果、玩具<b>不要拿</b>，陌生人带你走<b>不能去</b>，大声说：『我不认识你！』",
+    magic:"🎵 红灯停，绿灯行，<br>爸妈电话记心中，<br>陌生人的话不能听！",
+    tip:"今天就教孩子背熟：爸妈全名 + 一个手机号 + 家庭住址。反复演练走丢场景：站在原地不乱跑，找『穿制服的人』（警察、保安）或『带小孩的妈妈』求助。每月复习一次。"
+  }],
+  questions:[
+  {
+    type:"choice", kp:"礼貌用语",
+    title:"小超人不小心撞到了同学，玩具撒了一地。第一句话应该说什么？",
+    visual:"💥 🧒🧒 = ❓",
+    options:["『谁让你挡路的！』","『对不起！我帮你捡起来』","赶紧跑掉","假装没看见"], answer:1,
+    tip:"强调完整公式：道歉 = 说对不起 + 帮忙弥补。光说对不起不行动是『空气道歉』。可以角色扮演练一遍：撞到→对不起→一起捡→『没关系』→握手。"
+  },
+  {
+    type:"choice", kp:"交通安全",
+    title:"要过马路了，绿灯还有 3 秒就要变红灯。应该怎么办？",
+    visual:"🚦🟢 3️⃣ = ❓",
+    options:["赶紧跑过去","等下一个绿灯，牵好大人的手再过","看没车就冲过去","跟着别人一起闯"], answer:1,
+    tip:"讲清道理：绿灯快结束时跑过去，走到一半就变红灯了，很危险。下次真实过马路时让孩子当『安全指挥官』，由他判断能不能走——实景练习比说教深刻。"
+  },
+  {
+    type:"choice", kp:"安全求助",
+    title:"最后一题！在商场和妈妈走散了，小超人应该怎么办？",
+    visual:"🏬 ➕ 😢 = ❓",
+    options:["到处乱跑找妈妈","站在原地不动，找穿制服的工作人员帮忙","跟着说『带你去找妈妈』的陌生人走","躲起来哭"], answer:1,
+    tip:"答完立刻抽查：『爸爸叫什么名字？电话多少？』如果背不出，本周任务就是背熟。下次去商场可以指给孩子看：哪些人穿制服、服务台在哪里，做一次实地『安全演习』。"
+  }]
+}
+];
+/* ================= 状态 ================= */
+let curLevel = -1, curQ = 0, curLesson = 0, medals = 0, answered = false;
+const stage = document.getElementById("stage");
+
+function renderMedals(){
+  let s = "";
+  for(let i=0;i<5;i++) s += `<span class="${i<medals?'':'medal-dim'}">🏅</span>`;
+  document.getElementById("medalbar").innerHTML = s;
+}
+
+/* ================= 首页 ================= */
+function showStart(){
+  renderMedals();
+  stage.innerHTML = `
+  <div class="card level-intro">
+    <div class="big">😈</div>
+    <h1>坏习惯怪兽军团来啦！</h1>
+    <div class="story">懒懒虫 🐛、丢丢怪 👻、拖拉怪 😈 混进了小朋友的生活，
+    专门捣乱：让你赖床、丢东西、磨磨蹭蹭……<br><br>
+    只有闯过 <b>5 个训练站</b>、集齐 <b>5 枚好习惯勋章</b> 🏅，
+    才能变身<b>好习惯小超人</b> 🦸，把怪兽们统统赶跑！<br><br>
+    小超人，开始训练吧！</div>
+    <button class="btn" onclick="startLevel(0)">🚀 开始训练！</button>
+    <details><summary>👨‍👩‍👧 家长使用说明</summary>
+    <p>① 本训练营针对 5–7 岁幼小衔接阶段，精选五大类核心习惯：<b>作息自理、整理收纳、课堂习惯、时间管理、礼貌安全</b>。<br>
+    ② 每站分两步：先『📖 学本领』（趣味讲解+魔法口诀），再『闯关挑战』。全程约 50–60 分钟，也可以每天只玩一站。<br>
+    ③ 习惯不是玩一次就会的——每页下方的『家长这样做』给出了课后落地方法，真正的训练在日常生活里。<br>
+    ④ 建议配合『21 天打卡表』：每天做到一个习惯就贴一颗星，集满有小奖励。</p>
+    </details>
+  </div>`;
+}
+
+/* ================= 关卡入口 ================= */
+function startLevel(i){
+  curLevel = i; curQ = 0; curLesson = 0;
+  const lv = levels[i];
+  stage.innerHTML = `
+  <div class="card level-intro">
+    <div class="kp-badge">第 ${i+1} 站</div>
+    <div class="big">${lv.icon}</div>
+    <h1>${lv.name}</h1>
+    <div class="story">${lv.story}</div>
+    <button class="btn" onclick="showLesson()">📖 先学本领！</button>
+  </div>`;
+}
+
+/* ================= 学本领讲解页 ================= */
+function showLesson(){
+  const lv = levels[curLevel];
+  if(!lv.lessons || curLesson >= lv.lessons.length){ showQuestion(); return; }
+  const ls = lv.lessons[curLesson];
+  const total = lv.lessons.length;
+  const prog = `<div class="progress">📖 学本领 · 第 ${curLesson+1} / ${total} 页</div>`;
+  const isLast = curLesson === total-1;
+  stage.innerHTML = `${prog}
+  <div class="card">
+    <div class="kp-badge learn">📖 学本领：${ls.kp}</div>
+    <h2>${ls.title}</h2>
+    ${ls.visual?`<div class="lesson-visual">${ls.visual}</div>`:""}
+    <div class="lesson-text">${ls.text}</div>
+    ${ls.magic?`<div class="magic-word">${ls.magic}</div>`:""}
+    <button class="btn blue" onclick="nextLesson()">${isLast?"本领学会啦，去挑战！💪":"下一页 ➡️"}</button>
+    <details><summary>👨‍👩‍👧 家长这样做</summary><p>${ls.tip}</p></details>
+  </div>`;
+}
+function nextLesson(){ curLesson++; showLesson(); }
+
+/* ================= 出题 ================= */
+function showQuestion(){
+  answered = false;
+  const lv = levels[curLevel], q = lv.questions[curQ];
+  const prog = `<div class="progress">${lv.icon} ${lv.name} · 第 ${curQ+1} / ${lv.questions.length} 题</div>`;
+
+  if(q.type === "pack"){ renderPack(prog, q); return; }
+  if(q.type === "seq"){ renderSeq(prog, q); return; }
+
+  const oneCol = q.options.some(o=>o.length>7);
+  stage.innerHTML = `${prog}
+  <div class="card">
+    <div class="kp-badge">📌 ${q.kp}</div>
+    <h2>${q.title}</h2>
+    ${q.visual?`<div class="visual">${q.visual}</div>`:""}
+    <div class="opts ${oneCol?'one-col':''}">
+      ${q.options.map((o,i)=>`<button class="opt" onclick="pick(this,${i})">${o}</button>`).join("")}
+    </div>
+    <div class="feedback" id="fb"></div>
+    <button class="btn green hidden" id="nextBtn" onclick="nextQ()">下一题 ➡️</button>
+    <details><summary>👨‍👩‍👧 家长这样引导</summary><p>${q.tip}</p></details>
+  </div>`;
+}
+
+const praise = ["太棒了！🎉","答对啦！小超人真厉害！🌟","哇！这就是好习惯！💪","完全正确！怪兽害怕啦！🎊"];
+const retry = ["再想想，小超人会怎么做？🤔","没关系，再试一次！💡","嗯…好习惯是哪一个呢？🍀"];
+
+function pick(el, i){
+  if(answered) return;
+  const q = levels[curLevel].questions[curQ];
+  const fb = document.getElementById("fb");
+  if(i === q.answer){
+    answered = true;
+    el.classList.add("correct");
+    fb.className = "feedback ok";
+    fb.textContent = praise[Math.floor(Math.random()*praise.length)];
+    document.getElementById("nextBtn").classList.remove("hidden");
+  } else {
+    el.classList.add("wrong");
+    fb.className = "feedback no";
+    fb.textContent = retry[Math.floor(Math.random()*retry.length)];
+    setTimeout(()=>el.classList.remove("wrong"), 500);
+  }
+}
+
+function nextQ(){
+  curQ++;
+  const lv = levels[curLevel];
+  if(curQ < lv.questions.length){ showQuestion(); }
+  else { levelClear(); }
+}
+
+/* ================= 特殊题型：整理书包 ================= */
+let packSel;
+function renderPack(prog, q){
+  packSel = new Set();
+  stage.innerHTML = `${prog}
+  <div class="card">
+    <div class="kp-badge">📌 ${q.kp}</div>
+    <h2>${q.title}</h2>
+    <div class="pack-grid" id="packGrid"></div>
+    <button class="btn" id="packCheck" onclick="checkPack()">检查书包 🎒</button>
+    <div class="feedback" id="fb"></div>
+    <button class="btn green hidden" id="nextBtn" onclick="nextQ()">下一题 ➡️</button>
+    <details><summary>👨‍👩‍👧 家长这样引导</summary><p>${q.tip}</p></details>
+  </div>`;
+  drawPack(q);
+}
+function drawPack(q){
+  const g = document.getElementById("packGrid");
+  g.innerHTML = q.items.map((it,i)=>`
+    <div class="pack-item ${packSel.has(i)?'picked':''}" onclick="tapPack(${i})">
+      <div class="pi-icon">${it.icon}</div><div class="pi-name">${it.name}</div>
+    </div>`).join("");
+}
+function tapPack(i){
+  if(answered) return;
+  if(packSel.has(i)) packSel.delete(i); else packSel.add(i);
+  drawPack(levels[curLevel].questions[curQ]);
+}
+function checkPack(){
+  if(answered) return;
+  const q = levels[curLevel].questions[curQ];
+  const fb = document.getElementById("fb");
+  const correct = q.items.every((it,i)=> it.inBag === packSel.has(i));
+  const g = document.getElementById("packGrid");
+  if(correct){
+    answered = true;
+    g.querySelectorAll(".pack-item").forEach((el,i)=>{
+      if(q.items[i].inBag) el.className = "pack-item good";
+    });
+    fb.className = "feedback ok"; fb.textContent = "书包理得整整齐齐！丢丢怪气跑啦！🎉";
+    document.getElementById("nextBtn").classList.remove("hidden");
+    document.getElementById("packCheck").classList.add("hidden");
+  } else {
+    g.querySelectorAll(".pack-item").forEach((el,i)=>{
+      const wrongPick = packSel.has(i) && !q.items[i].inBag;
+      const missed = !packSel.has(i) && q.items[i].inBag;
+      if(wrongPick || missed){
+        el.classList.add("bad");
+        setTimeout(()=>el.classList.remove("bad"), 500);
+      }
+    });
+    fb.className = "feedback no";
+    fb.textContent = "再检查一下：上学要带什么？什么不能带？🤔";
+  }
+}
+
+/* ================= 特殊题型：排顺序 ================= */
+let seqNext, seqMark;
+function renderSeq(prog, q){
+  seqNext = 0; seqMark = {};
+  stage.innerHTML = `${prog}
+  <div class="card">
+    <div class="kp-badge">📌 ${q.kp}</div>
+    <h2>${q.title}</h2>
+    <div class="seq-grid" id="seqGrid"></div>
+    <div class="feedback" id="fb"></div>
+    <button class="btn green hidden" id="nextBtn" onclick="nextQ()">下一题 ➡️</button>
+    <details><summary>👨‍👩‍👧 家长这样引导</summary><p>${q.tip}</p></details>
+  </div>`;
+  drawSeq(q);
+}
+function drawSeq(q){
+  const g = document.getElementById("seqGrid");
+  g.innerHTML = q.items.map((it,i)=>`
+    <div class="seq-item ${seqMark[i]!==undefined?'done':''}" onclick="tapSeq(${i})">
+      ${seqMark[i]!==undefined?`<div class="seq-num">${seqMark[i]+1}</div>`:""}
+      <div class="si-icon">${it.icon}</div><div class="si-name">${it.name}</div>
+    </div>`).join("");
+}
+function tapSeq(i){
+  if(answered || seqMark[i]!==undefined) return;
+  const q = levels[curLevel].questions[curQ];
+  const fb = document.getElementById("fb");
+  if(q.items[i].order === seqNext){
+    seqMark[i] = seqNext; seqNext++;
+    drawSeq(q);
+    if(seqNext === q.items.length){
+      answered = true;
+      fb.className = "feedback ok"; fb.textContent = "顺序完全正确！小超人真会安排！🎉";
+      document.getElementById("nextBtn").classList.remove("hidden");
+    } else {
+      fb.className = "feedback ok"; fb.textContent = `对啦！接下来第 ${seqNext+1} 步做什么？`;
+    }
+  } else {
+    fb.className = "feedback no";
+    fb.textContent = "咦，这一步好像早了点？想想先做什么～🤔";
+  }
+}
+
+/* ================= 过关 ================= */
+function levelClear(){
+  medals = curLevel + 1;
+  renderMedals();
+  if(curLevel === levels.length-1){ showEnd(); return; }
+  stage.innerHTML = `
+  <div class="card level-intro">
+    <div class="confetti">🎉 🏅 🎉</div>
+    <h1>第 ${curLevel+1} 站通过！</h1>
+    <div class="story">你得到了第 <b>${medals}</b> 枚好习惯勋章！<br>
+    💡 休息一下：站起来伸个懒腰、喝口水，再继续训练！</div>
+    <button class="btn" onclick="startLevel(${curLevel+1})">前往第 ${curLevel+2} 站 ${levels[curLevel+1].icon} ➡️</button>
+  </div>`;
+}
+
+function showEnd(){
+  stage.innerHTML = `
+  <div class="card level-intro">
+    <div class="confetti">🎊🦸🎊</div>
+    <h1>🏅🏅🏅🏅🏅<br>变身成功！</h1>
+    <div class="big">🐛💨 👻💨 😈💨</div>
+    <div class="story">恭喜你集齐 5 枚勋章，正式成为<b>好习惯小超人</b>！<br>
+    懒懒虫、丢丢怪、拖拉怪都被你吓跑啦！<br><br>
+    你今天学会了：🌅 自己的事情自己做、🎒 理书包和归位、📚 课堂三魔法、⏰ 先完成再玩、🤝 礼貌与安全！<br><br>
+    <b>但是要小心：怪兽们每天都会偷偷回来！</b><br>
+    只有每天坚持好习惯，才能一直当小超人哦！</div>
+    <button class="btn" onclick="restart()">🔄 再训练一次</button>
+    <details><summary>👨‍👩‍👧 给家长的收尾建议（重要）</summary>
+    <p>① 习惯靠重复，不靠一次游戏。从今晚开始挑 <b>1–2 个</b>最急需的习惯先落地（推荐：睡前理书包 + 先完成再玩），别贪多。<br>
+    ② 做一张『21 天打卡表』贴冰箱上：每天做到就让孩子自己贴一颗星，比口头表扬有效得多。<br>
+    ③ 把怪兽名字用起来：孩子磨蹭时不说『你怎么这么慢』，改说『拖拉怪来了，快打败它！』——对抗怪兽比对抗爸妈有趣。<br>
+    ④ 家长以身作则是终极秘诀：您睡前整理自己的包，孩子自然会整理书包。<br>
+    ⑤ 每周日晚上可以重玩一次本训练营当『周复习』，让孩子给自己打分。</p>
+    </details>
+  </div>`;
+}
+
+function restart(){ medals = 0; curLevel = -1; curQ = 0; curLesson = 0; showStart(); }
+
+showStart();
+</script>
+</body>
+</html>
