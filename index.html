@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目导航首页</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, sans-serif;
+        }
+        body {
+            padding: 40px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            background: #f7f9fc;
+        }
+        h1 {
+            text-align: center;
+            color: #222;
+            margin-bottom: 12px;
+        }
+        .tip {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        .page-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+        }
+        .page-btn {
+            display: block;
+            padding: 24px 16px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 16px;
+            transition: 0.2s ease;
+        }
+        .page-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-3px);
+        }
+    </style>
+</head>
+<body>
+    <h1>我的项目页面导航</h1>
+    <p class="tip">共 <span id="count">0</span> 个网页</p>
+    <div class="page-list" id="listBox"></div>
+
+    <script>
+        // 这里填入你仓库所有html文件名，新增页面只需在这里追加一行
+        const htmlFiles = [
+            "好习惯小超人训练营.html",
+            "宝贝数学启蒙乐园.html",
+            "小勇士闯关大冒险2.html"
+        ];
+
+        const listBox = document.getElementById("listBox");
+        const countDom = document.getElementById("count");
+        countDom.innerText = htmlFiles.length;
+
+        // 循环生成按钮
+        htmlFiles.forEach(fileName => {
+            const a = document.createElement("a");
+            a.className = "page-btn";
+            a.href = fileName;
+            a.innerText = fileName.replace(".html", "");
+            listBox.appendChild(a);
+        });
+    </script>
+</body>
+</html>
